@@ -2,32 +2,81 @@ import React, { useState, useEffect } from 'react';
 import './MemoryGame.css';
 
 const CARD_SETS = {
-  Animals: ["🐘", "🦊", "🐞", "🐸", "🐨", "🐌", "🦁", "🐛"],
-  Symbols: ["⚛️", "☯️", "☮️", "⚠️", "♻️", "⚜️", "➿", "🌀"],
-  Foods: ["🍕", "🍔", "🍓", "🥑", "🌽", "🍩", "🍪", "🍉"],
+  Animals: ["🐘", "🦊", "🐞", "🐸", "🐨", "🐌", "🦁", "🐛", "🦒", "🦓", "🐅", "🐆", "🦘", "🐪", "🦏"],
+  Symbols: ["⚛️", "☯️", "☮️", "⚠️", "♻️", "⚜️", "➿", "🌀", "⭐", "💫", "✨", "🔆", "🌟", "💎", "🎭"],
+  Foods: ["🍕", "🍔", "🍓", "🥑", "🌽", "🍩", "🍪", "🍉", "🍇", "🍊", "🍌", "🥝", "🍒", "🥥", "🍑"],
+};
+
+const LEVEL_CONFIG = {
+  1: { rows: 4, cols: 4, penaltyPerIncorrect: 1 },
+  2: { rows: 4, cols: 5, penaltyPerIncorrect: 1 },
+  3: { rows: 4, cols: 5, penaltyPerIncorrect: 2 },
+  4: { rows: 4, cols: 5, penaltyPerIncorrect: 3 },
+  5: { rows: 5, cols: 6, penaltyPerIncorrect: 2 },
+  6: { rows: 5, cols: 6, penaltyPerIncorrect: 3 },
 };
 
 const shuffleArray = (array) => {
   return array.sort(() => 0.5 - Math.random());
 };
 
+// localStorage key for saving game state
+const GAME_STATE_KEY = 'memoryGameState';
+
+// Helper functions for localStorage
+const saveGameState = (gameState) => {
+  try {
+    localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+  } catch (error) {
+    console.warn('Failed to save game state to localStorage:', error);
+  }
+};
+
+const loadGameState = () => {
+  try {
+    const savedState = localStorage.getItem(GAME_STATE_KEY);
+    return savedState ? JSON.parse(savedState) : null;
+  } catch (error) {
+    console.warn('Failed to load game state from localStorage:', error);
+    return null;
+  }
+};
+
+const clearGameState = () => {
+  try {
+    localStorage.removeItem(GAME_STATE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear game state from localStorage:', error);
+  }
+};
+
 const MemoryGame = () => {
-  const [category, setCategory] = useState("Animals");
+  // Load saved state or use defaults
+  const savedState = loadGameState();
+  
+  const [category, setCategory] = useState(savedState?.category || "Animals");
   const [cards, setCards] = useState([]);
   const [flippedCards, setFlippedCards] = useState([]);
-  const [score, setScore] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [incorrect, setIncorrect] = useState(0);
-  const level = 1;
+  const [score, setScore] = useState(savedState?.score || 0);
+  const [correct, setCorrect] = useState(savedState?.correct || 0);
+  const [incorrect, setIncorrect] = useState(savedState?.incorrect || 0);
+  const [level, setLevel] = useState(savedState?.level || 1);
   const [isChecking, setIsChecking] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewTime, setPreviewTime] = useState(3);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [isGameComplete, setIsGameComplete] = useState(savedState?.isGameComplete || false);
+  const [showRules, setShowRules] = useState(false);
+  const [isResumedGame, setIsResumedGame] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCategoryWarning, setShowCategoryWarning] = useState(false);
+  const [pendingCategory, setPendingCategory] = useState(null);
   
   // Previous values for animations
-  const [prevScore, setPrevScore] = useState(0);
-  const [prevCorrect, setPrevCorrect] = useState(0);
-  const [prevIncorrect, setPrevIncorrect] = useState(0);
-  const [prevLevel, setPrevLevel] = useState(1);
+  const [prevScore, setPrevScore] = useState(savedState?.score || 0);
+  const [prevCorrect, setPrevCorrect] = useState(savedState?.correct || 0);
+  const [prevIncorrect, setPrevIncorrect] = useState(savedState?.incorrect || 0);
+  const [prevLevel, setPrevLevel] = useState(savedState?.level || 1);
   
   // Animation states
   const [scoreAnimation, setScoreAnimation] = useState('');
@@ -35,8 +84,17 @@ const MemoryGame = () => {
   const [incorrectAnimation, setIncorrectAnimation] = useState('');
   const [levelAnimation, setLevelAnimation] = useState('');
 
-  const generateCards = (selectedCategory) => {
-    const emojis = shuffleArray([...CARD_SETS[selectedCategory], ...CARD_SETS[selectedCategory]]);
+  const generateCards = (selectedCategory, currentLevel = 1) => {
+    const config = LEVEL_CONFIG[currentLevel];
+    const totalCards = config.rows * config.cols;
+    const pairs = totalCards / 2;
+    
+    const availableEmojis = CARD_SETS[selectedCategory];
+    const selectedEmojis = availableEmojis.slice(0, pairs);
+    const emojis = shuffleArray([...selectedEmojis, ...selectedEmojis]);
+    
+    console.log(`Generating cards for Level ${currentLevel}: ${config.rows}×${config.cols} = ${totalCards} cards (${pairs} pairs)`);
+    
     return emojis.map((emoji, index) => ({
       id: index,
       emoji: emoji,
@@ -45,7 +103,7 @@ const MemoryGame = () => {
     }));
   };
 
-  const startGame = (selectedCategory) => {
+  const startGame = (selectedCategory, resetLevel = true) => {
     setCategory(selectedCategory);
     setScore(0);
     setCorrect(0);
@@ -59,8 +117,19 @@ const MemoryGame = () => {
     setLevelAnimation('');
     setFlippedCards([]);
     setIsChecking(false);
+    setShowCongratulations(false);
+    setIsGameComplete(false);
+    setIsResumedGame(false);
     
-    const newCards = generateCards(selectedCategory);
+    // Clear localStorage when starting fresh
+    clearGameState();
+    
+    if (resetLevel) {
+      setLevel(1);
+      setPrevLevel(1);
+    }
+    
+    const newCards = generateCards(selectedCategory, resetLevel ? 1 : level);
     
     // Preview phase with countdown
     setIsPreviewing(true);
@@ -80,9 +149,104 @@ const MemoryGame = () => {
     }, 1000);
   };
 
+  const startNextLevel = () => {
+    const nextLevel = level + 1;
+    setLevel(nextLevel);
+    triggerLevelAnimation(nextLevel);
+    
+    // Reset progress for new level
+    setCorrect(0);
+    setPrevCorrect(0);
+    
+    const newCards = generateCards(category, nextLevel);
+    
+    // Reset flipped cards and checking state
+    setFlippedCards([]);
+    setIsChecking(false);
+    
+    // Preview phase with countdown for new level
+    setIsPreviewing(true);
+    setPreviewTime(3);
+    setCards(newCards.map(card => ({ ...card, isFlipped: true })));
+    
+    const countdown = setInterval(() => {
+      setPreviewTime(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          setCards(newCards.map(card => ({ ...card, isFlipped: false })));
+          setIsPreviewing(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   useEffect(() => {
-    startGame("Animals");
+    // Initialize game - either from saved state or start fresh
+    if (savedState && savedState.cards && savedState.cards.length > 0) {
+      // Resume from saved state
+      setCards(savedState.cards);
+      setIsResumedGame(true);
+      console.log('Resuming game from saved state:', savedState);
+      
+      // Hide the resumed indicator after 3 seconds
+      setTimeout(() => {
+        setIsResumedGame(false);
+      }, 3000);
+    } else {
+      // Start new game
+      startGame("Animals");
+    }
   }, []);
+
+  // Save game state whenever important values change
+  useEffect(() => {
+    const gameState = {
+      category,
+      cards,
+      score,
+      correct,
+      incorrect,
+      level,
+      isGameComplete
+    };
+    
+    // Only save if we have cards (game has started)
+    if (cards.length > 0) {
+      saveGameState(gameState);
+    }
+  }, [category, cards, score, correct, incorrect, level, isGameComplete]);
+
+  useEffect(() => {
+    // Check if level is completed
+    const totalPairs = cards.length / 2;
+    const allCardsMatched = cards.length > 0 && cards.every(card => card.isMatched);
+    
+    console.log('Level completion check:', {
+      cardsLength: cards.length,
+      totalPairs,
+      correct,
+      allCardsMatched,
+      level
+    });
+    
+    if (cards.length > 0 && (correct === totalPairs || allCardsMatched)) {
+      if (level === 6) {
+        // Game complete - clear localStorage
+        clearGameState();
+        setIsGameComplete(true);
+        setShowCongratulations(true);
+      } else {
+        // Level complete, show congratulations and move to next level
+        setShowCongratulations(true);
+        setTimeout(() => {
+          setShowCongratulations(false);
+          startNextLevel();
+        }, 5000);
+      }
+    }
+  }, [correct, cards.length, level, cards]);
 
   useEffect(() => {
     if (flippedCards.length === 2) {
@@ -144,6 +308,7 @@ const MemoryGame = () => {
 
   const checkForMatch = () => {
     const [card1, card2] = flippedCards;
+    
     if (card1.emoji === card2.emoji) {
       // Calculate CURRENT progress (not future progress)
       const currentProgress = (correct / (cards.length / 2)) * 100;
@@ -195,8 +360,9 @@ const MemoryGame = () => {
         )
       );
       triggerIncorrectAnimation(incorrect + 1);
-      // Decrease score by 1 for incorrect guess, but don't go below 0
-      triggerScoreAnimation(Math.max(0, score - 1));
+      // Use level-specific penalty for incorrect guess
+      const penalty = LEVEL_CONFIG[level].penaltyPerIncorrect;
+      triggerScoreAnimation(Math.max(0, score - penalty));
     }
     setFlippedCards([]);
     setIsChecking(false);
@@ -252,17 +418,167 @@ const MemoryGame = () => {
     setTimeout(() => setLevelAnimation(''), 600);
   };
 
-  const progress = (correct / (cards.length / 2)) * 100;
+  const handleCategoryClick = (selectedCategory) => {
+    if (selectedCategory === category) {
+      // Don't allow clicking the active category
+      return;
+    }
+    
+    // Check if there's progress to lose
+    if (score > 0 || correct > 0 || incorrect > 0 || level > 1) {
+      setPendingCategory(selectedCategory);
+      setShowCategoryWarning(true);
+    } else {
+      // No progress to lose, switch directly
+      startGame(selectedCategory, true);
+    }
+  };
+
+  const confirmCategorySwitch = () => {
+    setShowCategoryWarning(false);
+    if (pendingCategory) {
+      startGame(pendingCategory, true);
+      setPendingCategory(null);
+    }
+  };
+
+  const cancelCategorySwitch = () => {
+    setShowCategoryWarning(false);
+    setPendingCategory(null);
+  };
+
+  const handleResetClick = () => {
+    setShowResetConfirm(true);
+  };
+
+  const confirmReset = () => {
+    setShowResetConfirm(false);
+    startGame(category, true);
+  };
+
+  const cancelReset = () => {
+    setShowResetConfirm(false);
+  };
+
+  const handlePlayAgain = () => {
+    clearGameState(); // Clear saved state when starting a new game
+    startGame(category, true);
+  };
+
+  const toggleRules = () => {
+    setShowRules(!showRules);
+  };
+
+  const progress = cards.length > 0 ? (correct / (cards.length / 2)) * 100 : 0;
+  const config = LEVEL_CONFIG[level] || LEVEL_CONFIG[1];
+  
+  console.log('Progress calculation:', {
+    cardsLength: cards.length,
+    correct,
+    totalPairs: cards.length / 2,
+    progress,
+    level
+  });
 
   return (
     <div className="game-board">
+      {/* Help Button */}
+      <div className="help-button" onClick={toggleRules}>
+        ?
+      </div>
+
+      {/* Rules Modal */}
+      {showRules && (
+        <div className="rules-overlay" onClick={() => setShowRules(false)}>
+          <div className="rules-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rules-header">
+              <h2>🎮 Game Rules</h2>
+              <button className="close-rules" onClick={() => setShowRules(false)}>×</button>
+            </div>
+            <div className="rules-content">
+              <div className="rules-section">
+                <h3>📋 How to Play</h3>
+                <p>Match pairs of identical emojis by flipping cards. Complete all pairs to advance to the next level!</p>
+              </div>
+              
+              <div className="rules-section">
+                <h3>🏆 Scoring System</h3>
+                <div className="level-rules">
+                  <div className="level-rule">
+                    <span className="level-title">Level 1 (4×4 Grid)</span>
+                    <span className="scoring">Correct: +10 | Incorrect: -1</span>
+                  </div>
+                  <div className="level-rule">
+                    <span className="level-title">Level 2 (5×4 Grid)</span>
+                    <span className="scoring">Correct: +10 | Incorrect: -1</span>
+                  </div>
+                  <div className="level-rule">
+                    <span className="level-title">Level 3 (5×4 Grid)</span>
+                    <span className="scoring">Correct: +10 | Incorrect: -2</span>
+                  </div>
+                  <div className="level-rule">
+                    <span className="level-title">Level 4 (5×4 Grid)</span>
+                    <span className="scoring">Correct: +10 | Incorrect: -3</span>
+                  </div>
+                  <div className="level-rule">
+                    <span className="level-title">Level 5 (5×6 Grid)</span>
+                    <span className="scoring">Correct: +10 | Incorrect: -2</span>
+                  </div>
+                  <div className="level-rule">
+                    <span className="level-title">Level 6 (5×6 Grid)</span>
+                    <span className="scoring">Correct: +10 | Incorrect: -3</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rules-section">
+                <h3>🎯 Tips</h3>
+                <ul>
+                  <li>Each level starts with a 3-second preview of all cards</li>
+                  <li>Pay attention during preview time to memorize positions</li>
+                  <li>Score cannot go below 0</li>
+                  <li>Your progress is automatically saved to browser storage</li>
+                  <li>Complete all 6 levels to win the game!</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCongratulations && (
+        <div className="congratulations-overlay">
+          <div className="congratulations-dialog">
+            <div className="fireworks"></div>
+            <div className="congratulations-content">
+              <h2>🎉 Congratulations! 🎉</h2>
+              {isGameComplete ? (
+                <>
+                  <p>You've completed all 6 levels!</p>
+                  <p>Final Score: {score}</p>
+                  <button className="play-again-button" onClick={handlePlayAgain}>
+                    Play Again
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>Level {level} Complete!</p>
+                  <p>Moving to Level {level + 1}...</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       <header className="game-header">
         <div className="category-selector">
           {Object.keys(CARD_SETS).map((cat) => (
             <button
               key={cat}
-              className={`category-button ${category === cat ? "active" : ""}`}
-              onClick={() => startGame(cat)}
+              className={`category-button ${category === cat ? "active" : ""} ${category === cat ? "disabled" : ""}`}
+              onClick={() => handleCategoryClick(cat)}
+              disabled={category === cat}
             >
               {cat}
             </button>
@@ -274,7 +590,23 @@ const MemoryGame = () => {
         </div>
       </header>
       
-      <div className="preview-status">{isPreviewing ? `Preview: ${previewTime}s` : "Preview: 0s"}</div>
+      <div className="preview-status">
+        {isPreviewing ? `Preview: ${previewTime}s` : "Preview: 0s"}
+      </div>
+      
+      {/* Resumed Game Notification */}
+      {isResumedGame && (
+        <div className="resumed-notification">
+          <div className="resumed-notification-content">
+            <div className="notification-icon">📋</div>
+            <div className="notification-text">
+              <div className="notification-title">Game Resumed</div>
+              <div className="notification-subtitle">Continuing from saved progress</div>
+            </div>
+            <div className="notification-close" onClick={() => setIsResumedGame(false)}>✓</div>
+          </div>
+        </div>
+      )}
       <div className="stats-container">
         <div className={`stat-item ${levelAnimation}`}>Level <br/> 
           <span>{level}/6</span>
@@ -289,10 +621,63 @@ const MemoryGame = () => {
           <span>{incorrect}</span>
         </div>
       </div>
-      <button className="reset-button" onClick={() => startGame(category)}>
+      <button className="reset-button" onClick={handleResetClick}>
         RESET GAME
       </button>
-      <div className="card-grid">
+      
+      {/* Reset Confirmation Dialog */}
+      {showResetConfirm && (
+        <div className="confirmation-overlay" onClick={cancelReset}>
+          <div className="confirmation-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="confirmation-header">
+              <h3>🔄 Reset Game</h3>
+            </div>
+            <div className="confirmation-content">
+              <p>Are you sure you want to reset the game?</p>
+              <p>All progress will be lost.</p>
+              <div className="confirmation-buttons">
+                <button className="confirm-button" onClick={confirmReset}>
+                  Yes, Reset
+                </button>
+                <button className="cancel-button" onClick={cancelReset}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Switch Warning Dialog */}
+      {showCategoryWarning && (
+        <div className="confirmation-overlay" onClick={cancelCategorySwitch}>
+          <div className="confirmation-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="confirmation-header">
+              <h3>⚠️ Switch Category</h3>
+            </div>
+            <div className="confirmation-content">
+              <p>Switching categories will reset your current progress.</p>
+              <p>Level: {level}, Score: {score}, Correct: {correct}</p>
+              <p>Continue to <strong>{pendingCategory}</strong>?</p>
+              <div className="confirmation-buttons">
+                <button className="confirm-button" onClick={confirmCategorySwitch}>
+                  Yes, Switch
+                </button>
+                <button className="cancel-button" onClick={cancelCategorySwitch}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <div 
+        className="card-grid" 
+        style={{
+          gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
+          gridTemplateRows: `repeat(${config.rows}, 1fr)`
+        }}
+      >
         {cards.map((card) => (
           <div
             key={card.id}

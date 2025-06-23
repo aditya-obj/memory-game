@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import React, { Component } from 'react';
 import './MemoryGame.css';
 
 const CARD_SETS = {

@@ -51,21 +51,18 @@ const clearGameState = () => {
 };
 
 const MemoryGame = () => {
-  // Load saved state or use defaults
-  const savedState = loadGameState();
-  
-  const [category, setCategory] = useState(savedState?.category || "Animals");
+  const [category, setCategory] = useState("Animals");
   const [cards, setCards] = useState([]);
   const [flippedCards, setFlippedCards] = useState([]);
-  const [score, setScore] = useState(savedState?.score || 0);
-  const [correct, setCorrect] = useState(savedState?.correct || 0);
-  const [incorrect, setIncorrect] = useState(savedState?.incorrect || 0);
-  const [level, setLevel] = useState(savedState?.level || 1);
+  const [score, setScore] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [incorrect, setIncorrect] = useState(0);
+  const [level, setLevel] = useState(1);
   const [isChecking, setIsChecking] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewTime, setPreviewTime] = useState(3);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [isGameComplete, setIsGameComplete] = useState(savedState?.isGameComplete || false);
+  const [isGameComplete, setIsGameComplete] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [isResumedGame, setIsResumedGame] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -73,10 +70,10 @@ const MemoryGame = () => {
   const [pendingCategory, setPendingCategory] = useState(null);
   
   // Previous values for animations
-  const [prevScore, setPrevScore] = useState(savedState?.score || 0);
-  const [prevCorrect, setPrevCorrect] = useState(savedState?.correct || 0);
-  const [prevIncorrect, setPrevIncorrect] = useState(savedState?.incorrect || 0);
-  const [prevLevel, setPrevLevel] = useState(savedState?.level || 1);
+  const [prevScore, setPrevScore] = useState(0);
+  const [prevCorrect, setPrevCorrect] = useState(0);
+  const [prevIncorrect, setPrevIncorrect] = useState(0);
+  const [prevLevel, setPrevLevel] = useState(1);
   
   // Animation states
   const [scoreAnimation, setScoreAnimation] = useState('');
@@ -157,6 +154,8 @@ const MemoryGame = () => {
     // Reset progress for new level
     setCorrect(0);
     setPrevCorrect(0);
+    setIncorrect(0);
+    setPrevIncorrect(0);
     
     const newCards = generateCards(category, nextLevel);
     
@@ -184,16 +183,39 @@ const MemoryGame = () => {
 
   useEffect(() => {
     // Initialize game - either from saved state or start fresh
+    const savedState = loadGameState();
+    
     if (savedState && savedState.cards && savedState.cards.length > 0) {
-      // Resume from saved state
-      setCards(savedState.cards);
-      setIsResumedGame(true);
-      console.log('Resuming game from saved state:', savedState);
+      // Check if the saved state has actual progress (not just default values)
+      const hasProgress = savedState.score > 0 || 
+                         savedState.correct > 0 || 
+                         savedState.incorrect > 0 || 
+                         savedState.level > 1 ||
+                         savedState.cards.some(card => card.isMatched || card.isFlipped);
       
-      // Hide the resumed indicator after 3 seconds
-      setTimeout(() => {
-        setIsResumedGame(false);
-      }, 3000);
+      // Resume from saved state
+      setCategory(savedState.category);
+      setCards(savedState.cards);
+      setScore(savedState.score);
+      setCorrect(savedState.correct);
+      setIncorrect(savedState.incorrect);
+      setLevel(savedState.level);
+      setIsGameComplete(savedState.isGameComplete);
+      setPrevScore(savedState.score);
+      setPrevCorrect(savedState.correct);
+      setPrevIncorrect(savedState.incorrect);
+      setPrevLevel(savedState.level);
+      
+      // Only show notification if there's actual progress to resume
+      if (hasProgress) {
+        setIsResumedGame(true);
+        console.log('Resuming game from saved state:', savedState);
+        
+        // Hide the resumed indicator after 3 seconds
+        setTimeout(() => {
+          setIsResumedGame(false);
+        }, 3000);
+      }
     } else {
       // Start new game
       startGame("Animals");

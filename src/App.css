@@ -19,3 +19,18 @@
   margin-top: 0;
   color: #333;
 }
+
+/* Mobile responsiveness for App container */
+@media (max-width: 768px) {
+  .App {
+    padding: 10px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .App {
+    padding: 5px;
+    gap: 15px;
+  }
+}

@@ -72,16 +72,103 @@ const MemoryGame = () => {
     }
   }, [flippedCards]);
 
+  const createFlyingEmoji = (emoji, startElement, currentProgress) => {
+    const flyingEmoji = document.createElement('div');
+    flyingEmoji.textContent = emoji;
+    flyingEmoji.className = 'flying-emoji';
+    
+    // Get positions
+    const cardRect = startElement.getBoundingClientRect();
+    const progressBarContainer = document.querySelector('.progress-bar-container');
+    const progressBar = document.querySelector('.progress-bar');
+    const progressBarContainerRect = progressBarContainer.getBoundingClientRect();
+    
+    // Set starting position
+    flyingEmoji.style.left = `${cardRect.left + cardRect.width / 2}px`;
+    flyingEmoji.style.top = `${cardRect.top + cardRect.height / 2}px`;
+    
+    // Calculate end position (at the current progress bar fill position, centered vertically)
+    const progressWidth = progressBarContainerRect.width * (currentProgress / 100);
+    const endX = progressBarContainerRect.left + progressWidth;
+    const endY = progressBarContainerRect.top + progressBarContainerRect.height / 2;
+    
+    document.body.appendChild(flyingEmoji);
+    
+    // Update the animation to use custom properties
+    flyingEmoji.style.animation = 'none';
+    void flyingEmoji.offsetHeight; // Force reflow
+    
+    // Animate to end position with better easing
+    flyingEmoji.animate([
+      {
+        left: flyingEmoji.style.left,
+        top: flyingEmoji.style.top,
+        transform: 'scale(1) rotate(0deg)',
+        opacity: 1
+      },
+      {
+        left: `${endX}px`,
+        top: `${endY}px`,
+        transform: 'scale(0) rotate(360deg)',
+        opacity: 0
+      }
+    ], {
+      duration: 1500, // Reduced from 1800ms to 1500ms
+      easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' // ease-in-out with custom curve
+    });
+    
+    // Remove element when animation completes
+    setTimeout(() => {
+      flyingEmoji.remove();
+    }, 1500); // Updated to match new duration
+  };
+
   const checkForMatch = () => {
     const [card1, card2] = flippedCards;
     if (card1.emoji === card2.emoji) {
-      setCards(prevCards =>
-        prevCards.map(card =>
-          card.emoji === card1.emoji ? { ...card, isMatched: true, isFlipped: true } : card
-        )
-      );
-      setScore(prevScore => prevScore + 10);
-      setCorrect(prevCorrect => prevCorrect + 1);
+      // Calculate CURRENT progress (not future progress)
+      const currentProgress = (correct / (cards.length / 2)) * 100;
+      
+      // Create flying emojis before updating state
+      const card1Element = document.querySelector(`[data-card-id="${card1.id}"]`);
+      const card2Element = document.querySelector(`[data-card-id="${card2.id}"]`);
+      
+      if (card1Element && card2Element) {
+        // Slight delay between the two flying emojis for better visual effect
+        setTimeout(() => createFlyingEmoji(card1.emoji, card1Element, currentProgress), 200);
+        setTimeout(() => createFlyingEmoji(card2.emoji, card2Element, currentProgress), 400);
+        
+        // Delay state updates until flying emoji animation completes
+        setTimeout(() => {
+          setCards(prevCards =>
+            prevCards.map(card =>
+              card.emoji === card1.emoji ? { ...card, isMatched: true, isFlipped: true } : card
+            )
+          );
+          setScore(prevScore => prevScore + 10);
+          setCorrect(prevCorrect => prevCorrect + 1);
+          
+          // Trigger progress bar pulse immediately when progress increases
+          setTimeout(() => {
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+              progressBar.classList.add('emoji-received');
+              setTimeout(() => {
+                progressBar.classList.remove('emoji-received');
+              }, 500);
+            }
+          }, 50); // Very small delay to ensure progress bar has updated
+        }, 1500); // Flying animation duration (1500ms)
+      } else {
+        // Fallback if elements not found - immediate update
+        setCards(prevCards =>
+          prevCards.map(card =>
+            card.emoji === card1.emoji ? { ...card, isMatched: true, isFlipped: true } : card
+          )
+        );
+        setScore(prevScore => prevScore + 10);
+        setCorrect(prevCorrect => prevCorrect + 1);
+      }
     } else {
       setCards(prevCards =>
         prevCards.map(card =>
@@ -119,13 +206,13 @@ const MemoryGame = () => {
             </button>
           ))}
         </div>
+        
+        <div className="progress-bar-container">
+          <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+        </div>
       </header>
-      <div className="progress-bar-container">
-        <div className="progress-bar" style={{ width: `${progress}%` }}></div>
-      </div>
-      <div className="preview-status">
-        {isPreviewing ? `Preview: ${previewTime}s` : "Preview: 0s"}
-      </div>
+      
+      <div className="preview-status">{isPreviewing ? `Preview: ${previewTime}s` : "Preview: 0s"}</div>
       <div className="stats-container">
         <div className="stat-item">Level <br/> <span>{level}/6</span></div>
         <div className="stat-item">Score <br/> <span>{score}</span></div>
@@ -139,6 +226,7 @@ const MemoryGame = () => {
         {cards.map((card) => (
           <div
             key={card.id}
+            data-card-id={card.id}
             className={`card ${card.isFlipped || card.isMatched ? 'flipped' : ''} ${card.isMatched ? 'matched' : ''}`}
             onClick={() => handleCardClick(card)}
           >

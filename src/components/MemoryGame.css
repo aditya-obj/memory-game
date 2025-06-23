@@ -292,23 +292,25 @@ body {
     box-shadow: 0 6px 20px rgba(26, 26, 26, 0.2);
 }
 
-/* Progress Bar - Full Width at Top */
+/* Progress Bar - Between Category and Preview */
 .progress-bar-container {
-    position: fixed;
-    top: 0;
-    left: 0;
     width: 100%;
+    max-width: 800px;
+    margin: 20px auto;
     background-color: #e9ecef;
-    height: 6px;
+    height: 12px;
+    border-radius: 12px;
+    border: 2px solid #d6d8db;
     overflow: hidden;
-    z-index: 1000;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #ffc107, #ffb300, #ff8f00);
+    background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(184, 134, 11, 0.4);
     position: relative;
     overflow: hidden;
 }
@@ -320,7 +322,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     animation: progressShine 2s infinite;
 }
 
@@ -475,6 +477,65 @@ body {
 /* Click animation */
 .card:active {
     transform: scale(0.95);
+}
+
+/* Flying emoji animation */
+.flying-emoji {
+    position: fixed;
+    font-size: 3rem;
+    z-index: 1001;
+    pointer-events: none;
+    --start-x: 0px;
+    --start-y: 0px;
+    --end-x: 0px;
+    --end-y: 0px;
+}
+
+@keyframes flyToProgressBar {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    30% {
+        transform: scale(1) rotate(108deg);
+        opacity: 0.95;
+    }
+    60% {
+        transform: scale(0.8) rotate(216deg);
+        opacity: 0.8;
+    }
+    80% {
+        transform: scale(0.4) rotate(288deg);
+        opacity: 0.5;
+    }
+    95% {
+        transform: scale(0.1) rotate(342deg);
+        opacity: 0.2;
+    }
+    100% {
+        transform: scale(0) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Progress bar pulse animation when emoji arrives */
+.progress-bar.emoji-received {
+    animation: progressPulse 0.5s ease-out;
+}
+
+@keyframes progressPulse {
+    0% {
+        box-shadow: 0 1px 3px rgba(184, 134, 11, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 3px 8px rgba(184, 134, 11, 0.8);
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: 0 1px 3px rgba(184, 134, 11, 0.4);
+        transform: scale(1);
+    }
 }
 
 /* Responsive design */

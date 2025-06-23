@@ -36,12 +36,85 @@ body {
 /* Category Selector */
 .category-selector {
     display: flex;
-    gap: 8px;
-    margin-bottom: 30px;
+    gap: 15px;
     justify-content: center;
-    padding: 8px;
+    align-items: center;
+    padding: 20px 0;
     background: transparent;
-    border-radius: 30px;
+}
+
+.category-button {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 249, 250, 0.8));
+    color: #495057;
+    border: 2px solid #dee2e6;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transform: translateY(0);
+}
+
+.category-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.3), transparent);
+    transition: left 0.6s ease;
+}
+
+.category-button:hover::before {
+    left: 100%;
+}
+
+.category-button.active {
+    background: linear-gradient(135deg, #ffc107, #ffb300);
+    color: #1a1a1a;
+    border-color: #b8860b;
+    transform: scale(1.05) translateY(-3px);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+    animation: activeButtonPulse 2s infinite;
+}
+
+.category-button:not(.active):hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.9));
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+    border-color: #ffc107;
+}
+
+@keyframes activeButtonPulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+    }
+    50% {
+        box-shadow: 0 3px 10px rgba(255, 193, 7, 0.6);
+    }
+}
+
+/* Preview Status */
+.preview-status {
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: 900;
+    text-align: center;
+    font-size: 1.2rem;
+    background: transparent;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes fadeInDown {
@@ -55,81 +128,30 @@ body {
     }
 }
 
-.category-button {
-    background-color: transparent;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #666;
-    position: relative;
-    overflow: hidden;
-}
-
-.category-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transition: left 0.5s;
-}
-
-.category-button:hover::before {
-    left: 100%;
-}
-
-.category-button.active {
-    background: linear-gradient(135deg, #ffc107, #ffb300);
-    color: #1a1a1a;
-    font-weight: 700;
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
-}
-
-.category-button:not(.active):hover {
-    background-color: rgba(255, 255, 255, 0.7);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Preview Status */
-.preview-status {
-    color: #333;
-    margin-bottom: 30px;
-    font-weight: 700;
-    text-align: center;
-    font-size: 1.3rem;
-    padding: 20px;
-    background: transparent;
-    border-radius: 15px;
-    border: 2px solid #dee2e6;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
 /* Stats Container */
 .stats-container {
     display: flex;
     justify-content: space-between;
     text-align: center;
-    border: 3px solid #ffc107;
+    border: 2px solid #ffc107;
     border-radius: 20px;
-    padding: 25px 20px;
-    margin-bottom: 30px;
-    background: rgba(255, 249, 230, 0.95);
-    box-shadow: 0 12px 40px rgba(255, 193, 7, 0.2);
+    padding: 20px 18px;
+    margin-bottom: 25px;
+    background: linear-gradient(135deg, rgba(255, 249, 230, 0.98), rgba(255, 248, 220, 0.95));
+    box-shadow: 0 10px 30px rgba(255, 193, 7, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.5);
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
+    animation: statsFloat 3s ease-in-out infinite;
+}
+
+@keyframes statsFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
 }
 
 .stats-container::before {
@@ -139,8 +161,8 @@ body {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.1), transparent);
-    animation: shimmer 3s infinite;
+    background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.15), transparent);
+    animation: shimmer 4s infinite;
 }
 
 @keyframes shimmer {
@@ -148,52 +170,63 @@ body {
     100% { left: 100%; }
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 .stat-item {
     color: #666;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 600;
     flex: 1;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 8px;
+    border-radius: 12px;
 }
 
 .stat-item:hover {
-    transform: scale(1.05);
+    transform: scale(1.08) translateY(-2px);
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .stat-item span {
     color: #1a1a1a;
     font-size: 1.8rem;
-    font-weight: 800;
+    font-weight: 900;
     display: block;
-    margin-top: 8px;
-    transition: color 0.3s ease;
+    margin-top: 6px;
+    transition: all 0.3s ease;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .stat-item:first-child span {
     color: #6c757d;
+    background: linear-gradient(135deg, #6c757d, #495057);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .stat-item:nth-child(2) span {
     color: #28a745;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .stat-item:nth-child(3) span {
     color: #007bff;
+    background: linear-gradient(135deg, #007bff, #17a2b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .stat-item:last-child span {
     color: #dc3545;
+    background: linear-gradient(135deg, #dc3545, #fd7e14);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 /* Reset Button */
@@ -201,18 +234,23 @@ body {
     background: linear-gradient(135deg, #1a1a1a, #333);
     color: #ffc107;
     border: none;
-    border-radius: 20px;
-    padding: 20px 0;
-    font-size: 1.2rem;
-    font-weight: 800;
+    border-radius: 15px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
     cursor: pointer;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
+    width: fit-content;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 12px 40px rgba(26, 26, 26, 0.3);
+    box-shadow: 0 8px 25px rgba(26, 26, 26, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto 30px auto;
 }
 
 .reset-button::before {
@@ -222,7 +260,7 @@ body {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     transition: left 0.6s;
 }
 
@@ -230,11 +268,23 @@ body {
     left: 100%;
 }
 
+.reset-button::after {
+    content: '⟲';
+    font-size: 1.6rem;
+    color: #ffc107;
+    font-weight: bold;
+    order: -1;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    position: relative;
+    top: -2px;
+}
+
 .reset-button:hover {
     background: linear-gradient(135deg, #333, #555);
     transform: translateY(-3px);
     box-shadow: 0 12px 35px rgba(26, 26, 26, 0.3);
-    color: #ffcd39;
 }
 
 .reset-button:active {
@@ -302,6 +352,8 @@ body {
     animation: cardSlideIn 0.5s ease-out;
     border-radius: 15px;
     overflow: hidden;
+    perspective: 1000px;
+    transform-style: preserve-3d;
 }
 
 .card:hover {
@@ -313,20 +365,33 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, #ffffff, #f8f9fa);
-    border: 2px solid #e9ecef;
+    border: 2px solid #dee2e6;
     border-radius: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    font-size: 3.5rem;
+    font-weight: bold;
+    color: #dbdbdb;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotateY(0deg);
+    transition: transform 0.3s ease, visibility 0.3s ease;
+    visibility: visible;
+    backface-visibility: visible;
+}
+
+.card-blank::before {
+    content: '?';
 }
 
 .card-emoji {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #ffffff, #f8f9fa);
-    border: 2px solid #ffc107;
+    background: linear-gradient(135deg, #ffc107, #ffb300);
+    border: 2px solid #b8860b;
     border-radius: 15px;
     display: flex;
     justify-content: center;
@@ -335,11 +400,41 @@ body {
     font-weight: normal;
     line-height: 1;
     box-shadow: 0 6px 20px rgba(255, 193, 7, 0.2);
-    transition: all 0.3s ease;
-    animation: flipIn 0.6s ease-out;
-    /* Ensure emojis are visible */
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotateY(-90deg);
+    transition: transform 0.3s ease, visibility 0.3s ease;
+    visibility: hidden;
+    backface-visibility: visible;
+    /* Ensure emojis are visible when flipped */
     opacity: 1;
+}
+
+/* Flipped state animations */
+.card.flipped .card-blank {
+    transform: rotateY(90deg);
+    visibility: hidden;
+    transition-delay: 0s, 0.15s;
+}
+
+.card.flipped .card-emoji {
+    transform: rotateY(0deg);
     visibility: visible;
+    transition-delay: 0.15s, 0s;
+}
+
+/* Unflipped state (when going back) */
+.card:not(.flipped) .card-blank {
+    transform: rotateY(0deg);
+    visibility: visible;
+    transition-delay: 0.15s, 0s;
+}
+
+.card:not(.flipped) .card-emoji {
+    transform: rotateY(-90deg);
+    visibility: hidden;
+    transition-delay: 0s, 0.15s;
 }
 
 @keyframes cardSlideIn {
@@ -350,17 +445,6 @@ body {
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes flipIn {
-    0% {
-        transform: rotateY(-90deg);
-        opacity: 0;
-    }
-    100% {
-        transform: rotateY(0deg);
-        opacity: 1;
     }
 }
 

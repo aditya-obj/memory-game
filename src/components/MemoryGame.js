@@ -82,17 +82,6 @@ const MemoryGame = () => {
       );
       setScore(prevScore => prevScore + 10);
       setCorrect(prevCorrect => prevCorrect + 1);
-      
-      // Add matched animation
-      setTimeout(() => {
-        const matchedCards = document.querySelectorAll('.card.flipped');
-        matchedCards.forEach(card => {
-          if (card.querySelector('.card-back').textContent === card1.emoji) {
-            card.classList.add('matched');
-            setTimeout(() => card.classList.remove('matched'), 600);
-          }
-        });
-      }, 100);
     } else {
       setCards(prevCards =>
         prevCards.map(card =>
@@ -153,11 +142,8 @@ const MemoryGame = () => {
             className={`card ${card.isFlipped || card.isMatched ? 'flipped' : ''} ${card.isMatched ? 'matched' : ''}`}
             onClick={() => handleCardClick(card)}
           >
-            {card.isFlipped || card.isMatched ? (
-              <div className="card-emoji">{card.emoji}</div>
-            ) : (
-              <div className="card-blank"></div>
-            )}
+            <div className="card-blank"></div>
+            <div className="card-emoji">{card.emoji}</div>
           </div>
         ))}
       </div>

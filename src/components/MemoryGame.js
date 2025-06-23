@@ -16,14 +16,42 @@ const LEVEL_CONFIG = {
   6: { rows: 5, cols: 6, penaltyPerIncorrect: 3 },
 };
 
+/**
+ * Shuffles an array using the Fisher-Yates algorithm
+ * @param {Array} array - The array to shuffle
+ * @returns {Array} - A new shuffled array
+ */
 const shuffleArray = (array) => {
-  return array.sort(() => 0.5 - Math.random());
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 };
 
 // localStorage key for saving game state
 const GAME_STATE_KEY = 'memoryGameState';
 
+// Game constants
+const INITIAL_PREVIEW_TIME = 3;
+const CARD_FLIP_DELAY = 1000;
+const LEVEL_COMPLETION_DELAY = 5000;
+const NOTIFICATION_TIMEOUT = 3000;
+const ANIMATION_DURATION = 600;
+const FLYING_EMOJI_DURATION = 1500;
+const PROGRESS_PULSE_DELAY = 50;
+const PROGRESS_PULSE_DURATION = 500;
+const FLYING_EMOJI_DELAY_1 = 200;
+const FLYING_EMOJI_DELAY_2 = 400;
+const SCORE_POINTS_PER_MATCH = 10;
+const MAX_LEVEL = 6;
+
 // Helper functions for localStorage
+/**
+ * Saves the current game state to localStorage
+ * @param {Object} gameState - The game state object to save
+ */
 const saveGameState = (gameState) => {
   try {
     localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
@@ -32,6 +60,10 @@ const saveGameState = (gameState) => {
   }
 };
 
+/**
+ * Loads the game state from localStorage
+ * @returns {Object|null} The saved game state or null if not found
+ */
 const loadGameState = () => {
   try {
     const savedState = localStorage.getItem(GAME_STATE_KEY);
@@ -42,6 +74,9 @@ const loadGameState = () => {
   }
 };
 
+/**
+ * Clears the game state from localStorage
+ */
 const clearGameState = () => {
   try {
     localStorage.removeItem(GAME_STATE_KEY);
@@ -50,6 +85,11 @@ const clearGameState = () => {
   }
 };
 
+/**
+ * MemoryGame - A multi-level memory card game component (Functional)
+ * Features multiple categories, difficulty levels, animations, and progress persistence
+ * @returns {JSX.Element} The memory game component
+ */
 const MemoryGame = () => {
   const [category, setCategory] = useState("Animals");
   const [cards, setCards] = useState([]);
@@ -130,7 +170,7 @@ const MemoryGame = () => {
     
     // Preview phase with countdown
     setIsPreviewing(true);
-    setPreviewTime(3);
+    setPreviewTime(INITIAL_PREVIEW_TIME);
     setCards(newCards.map(card => ({ ...card, isFlipped: true })));
     
     const countdown = setInterval(() => {
@@ -143,7 +183,7 @@ const MemoryGame = () => {
         }
         return prev - 1;
       });
-    }, 1000);
+    }, CARD_FLIP_DELAY);
   };
 
   const startNextLevel = () => {
@@ -165,7 +205,7 @@ const MemoryGame = () => {
     
     // Preview phase with countdown for new level
     setIsPreviewing(true);
-    setPreviewTime(3);
+    setPreviewTime(INITIAL_PREVIEW_TIME);
     setCards(newCards.map(card => ({ ...card, isFlipped: true })));
     
     const countdown = setInterval(() => {
@@ -178,7 +218,7 @@ const MemoryGame = () => {
         }
         return prev - 1;
       });
-    }, 1000);
+    }, CARD_FLIP_DELAY);
   };
 
   useEffect(() => {
@@ -211,10 +251,10 @@ const MemoryGame = () => {
         setIsResumedGame(true);
         console.log('Resuming game from saved state:', savedState);
         
-        // Hide the resumed indicator after 3 seconds
+        // Hide the resumed indicator after notification timeout
         setTimeout(() => {
           setIsResumedGame(false);
-        }, 3000);
+        }, NOTIFICATION_TIMEOUT);
       }
     } else {
       // Start new game
@@ -265,7 +305,7 @@ const MemoryGame = () => {
         setTimeout(() => {
           setShowCongratulations(false);
           startNextLevel();
-        }, 5000);
+        }, LEVEL_COMPLETION_DELAY);
       }
     }
   }, [correct, cards.length, level, cards]);
@@ -273,7 +313,7 @@ const MemoryGame = () => {
   useEffect(() => {
     if (flippedCards.length === 2) {
       setIsChecking(true);
-      setTimeout(checkForMatch, 1000);
+      setTimeout(checkForMatch, CARD_FLIP_DELAY);
     }
   }, [flippedCards]);
 
@@ -318,14 +358,14 @@ const MemoryGame = () => {
         opacity: 0
       }
     ], {
-      duration: 1500, // Reduced from 1800ms to 1500ms
+      duration: FLYING_EMOJI_DURATION,
       easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' // ease-in-out with custom curve
     });
     
     // Remove element when animation completes
     setTimeout(() => {
       flyingEmoji.remove();
-    }, 1500); // Updated to match new duration
+    }, FLYING_EMOJI_DURATION);
   };
 
   const checkForMatch = () => {
@@ -341,8 +381,8 @@ const MemoryGame = () => {
       
       if (card1Element && card2Element) {
         // Slight delay between the two flying emojis for better visual effect
-        setTimeout(() => createFlyingEmoji(card1.emoji, card1Element, currentProgress), 200);
-        setTimeout(() => createFlyingEmoji(card2.emoji, card2Element, currentProgress), 400);
+        setTimeout(() => createFlyingEmoji(card1.emoji, card1Element, currentProgress), FLYING_EMOJI_DELAY_1);
+        setTimeout(() => createFlyingEmoji(card2.emoji, card2Element, currentProgress), FLYING_EMOJI_DELAY_2);
         
         // Delay state updates until flying emoji animation completes
         setTimeout(() => {
@@ -351,7 +391,7 @@ const MemoryGame = () => {
               card.emoji === card1.emoji ? { ...card, isMatched: true, isFlipped: true } : card
             )
           );
-          triggerScoreAnimation(score + 10);
+          triggerScoreAnimation(score + SCORE_POINTS_PER_MATCH);
           triggerCorrectAnimation(correct + 1);
           
           // Trigger progress bar pulse immediately when progress increases
@@ -361,10 +401,10 @@ const MemoryGame = () => {
               progressBar.classList.add('emoji-received');
               setTimeout(() => {
                 progressBar.classList.remove('emoji-received');
-              }, 500);
+              }, PROGRESS_PULSE_DURATION);
             }
-          }, 50); // Very small delay to ensure progress bar has updated
-        }, 1500); // Flying animation duration (1500ms)
+          }, PROGRESS_PULSE_DELAY);
+        }, FLYING_EMOJI_DURATION);
       } else {
         // Fallback if elements not found - immediate update
         setCards(prevCards =>
@@ -372,7 +412,7 @@ const MemoryGame = () => {
             card.emoji === card1.emoji ? { ...card, isMatched: true, isFlipped: true } : card
           )
         );
-        triggerScoreAnimation(score + 10);
+        triggerScoreAnimation(score + SCORE_POINTS_PER_MATCH);
         triggerCorrectAnimation(correct + 1);
       }
     } else {
@@ -403,10 +443,10 @@ const MemoryGame = () => {
     setPrevScore(score);
     if (newScore > score) {
       setScoreAnimation('score-increase');
-      setTimeout(() => setScoreAnimation(''), 600);
+      setTimeout(() => setScoreAnimation(''), ANIMATION_DURATION);
     } else if (newScore < score) {
       setScoreAnimation('score-decrease');
-      setTimeout(() => setScoreAnimation(''), 500);
+      setTimeout(() => setScoreAnimation(''), ANIMATION_DURATION - 100);
     }
     setScore(newScore);
   };
@@ -418,7 +458,7 @@ const MemoryGame = () => {
     }
     setCorrect(newCorrect);
     
-    setTimeout(() => setCorrectAnimation(''), 600);
+    setTimeout(() => setCorrectAnimation(''), ANIMATION_DURATION);
   };
 
   const triggerIncorrectAnimation = (newIncorrect) => {
@@ -428,7 +468,7 @@ const MemoryGame = () => {
     }
     setIncorrect(newIncorrect);
     
-    setTimeout(() => setIncorrectAnimation(''), 600);
+    setTimeout(() => setIncorrectAnimation(''), ANIMATION_DURATION);
   };
 
   const triggerLevelAnimation = (newLevel) => {
@@ -437,7 +477,7 @@ const MemoryGame = () => {
       setLevelAnimation('stat-increase');
     }
     
-    setTimeout(() => setLevelAnimation(''), 600);
+    setTimeout(() => setLevelAnimation(''), ANIMATION_DURATION);
   };
 
   const handleCategoryClick = (selectedCategory) => {

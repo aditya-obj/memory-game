@@ -134,10 +134,15 @@ class MemoryGame extends Component {
                          savedState.level > 1 ||
                          savedState.cards.some(card => card.isMatched || card.isFlipped);
       
-      // Resume from saved state
+      // Resume from saved state but ensure no cards are temporarily flipped
+      const cleanedCards = savedState.cards.map(card => ({
+        ...card,
+        isFlipped: card.isMatched // Only keep flipped state for matched cards
+      }));
+      
       this.setState({
         category: savedState.category,
-        cards: savedState.cards,
+        cards: cleanedCards,
         score: savedState.score,
         correct: savedState.correct,
         incorrect: savedState.incorrect,
@@ -147,6 +152,8 @@ class MemoryGame extends Component {
         prevCorrect: savedState.correct,
         prevIncorrect: savedState.incorrect,
         prevLevel: savedState.level,
+        flippedCards: [], // Ensure flippedCards is reset
+        isChecking: false // Ensure not in checking state
       });
       
       // Only show notification if there's actual progress to resume
@@ -176,9 +183,15 @@ class MemoryGame extends Component {
       prevState.level !== this.state.level ||
       prevState.isGameComplete !== this.state.isGameComplete
     ) {
+      // Clean cards before saving - only save matched cards as flipped
+      const cleanedCards = this.state.cards.map(card => ({
+        ...card,
+        isFlipped: card.isMatched // Only keep flipped state for matched cards
+      }));
+      
       const gameState = {
         category: this.state.category,
-        cards: this.state.cards,
+        cards: cleanedCards,
         score: this.state.score,
         correct: this.state.correct,
         incorrect: this.state.incorrect,
